@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1e1e2e">
+<title>🔐 خزنة كلمات المرور</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, 'Segoe UI', Tahoma, sans-serif;
+    background: linear-gradient(135deg, #1e1e2e 0%, #313244 100%);
+    color: #cdd6f4; min-height: 100vh; padding: 15px;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .container { max-width: 700px; margin: 0 auto; }
+  h1 { text-align: center; color: #89b4fa; margin-bottom: 15px; font-size: 22px; }
+  h2 { color: #89b4fa; font-size: 16px; margin: 12px 0 8px; }
+  .card {
+    background: #313244; border-radius: 14px; padding: 16px;
+    margin-bottom: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+  input, button, select {
+    font-family: inherit; font-size: 15px; border-radius: 10px;
+    border: 1px solid #45475a; background: #1e1e2e; color: #cdd6f4;
+    padding: 12px; width: 100%; margin-bottom: 10px;
+  }
+  input:focus { outline: none; border-color: #89b4fa; }
+  button {
+    cursor: pointer; font-weight: bold; border: none;
+    transition: transform 0.1s, opacity 0.2s;
+    min-height: 46px;
+  }
+  button:hover { opacity: 0.9; }
+  button:active { transform: scale(0.98); }
+  .btn-primary { background: #89b4fa; color: #1e1e2e; }
+  .btn-success { background: #a6e3a1; color: #1e1e2e; }
+  .btn-warn { background: #f9e2af; color: #1e1e2e; }
+  .btn-danger { background: #f38ba8; color: #1e1e2e; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .row > * { flex: 1; min-width: 110px; }
+  .checkbox-row {
+    display: flex; gap: 12px; flex-wrap: wrap; margin: 8px 0;
+  }
+  .checkbox-row label {
+    display: flex; align-items: center; gap: 6px;
+    cursor: pointer; user-select: none; font-size: 14px;
+  }
+  .checkbox-row input {
+    width: 20px; height: 20px; margin: 0; accent-color: #89b4fa;
+  }
+  .pwd-display {
+    font-family: 'Courier New', monospace; font-size: 16px;
+    text-align: center; letter-spacing: 1px;
+    background: #1e1e2e; padding: 14px; border-radius: 10px;
+    word-break: break-all; margin: 10px 0; color: #a6e3a1;
+    min-height: 50px; display: flex; align-items: center; justify-content: center;
+  }
+  .strength-bar {
+    height: 8px; background: #45475a; border-radius: 4px;
+    overflow: hidden; margin: 8px 0;
+  }
+  .strength-fill { height: 100%; width: 0%; transition: width 0.3s, background 0.3s; }
+  .strength-text { text-align: center; font-weight: bold; margin: 6px 0; font-size: 14px; }
+  .vault-item {
+    background: #1e1e2e; border-radius: 10px; padding: 12px;
+    margin-bottom: 10px; display: flex; justify-content: space-between;
+    align-items: center; flex-wrap: wrap; gap: 8px;
+  }
+  .vault-info { flex: 1; min-width: 180px; }
+  .vault-user { color: #89b4fa; font-weight: bold; font-size: 15px; }
+  .vault-pwd { font-family: monospace; color: #a6e3a1; font-size: 13px; margin: 4px 0; }
+  .vault-actions { display: flex; gap: 6px; }
+  .vault-actions button {
+    padding: 8px 12px; font-size: 14px; width: auto; margin: 0; min-height: 38px;
+  }
+  .hidden { display: none !important; }
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: #a6e3a1; color: #1e1e2e; padding: 12px 24px;
+    border-radius: 10px; font-weight: bold; z-index: 1000;
+    animation: slideUp 0.3s ease; max-width: 90%;
+    text-align: center; font-size: 14px;
+  }
+  .toast.error { background: #f38ba8; }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translate(-50%, 20px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+  }
+  .hint { font-size: 12px; color: #9399b2; margin-top: 4px; line-height: 1.5; }
+  .empty { text-align: center; color: #6c7086; padding: 20px; font-size: 14px; }
+  .slider-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 10px;
+  }
+  .slider-row input[type="range"] {
+    padding: 0; margin: 0; flex: 1; accent-color: #89b4fa;
+  }
+  .slider-value {
+    background: #1e1e2e; padding: 6px 12px; border-radius: 8px;
+    font-weight: bold; min-width: 45px; text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🔐 خزنة كلمات المرور</h1>
+
+  <!-- شاشة الدخول -->
+  <div id="loginScreen" class="card">
+    <h2>🔑 كلمة المرور الرئيسية</h2>
+    <p class="hint">تُستخدم لتشفير خزنتك محلياً في متصفحك. لا تُرسل لأي مكان.</p>
+    <input type="password" id="masterPwd" placeholder="أدخل كلمة المرور الرئيسية..." autocomplete="current-password" />
+    <button class="btn-primary" onclick="login()">دخول / إنشاء خزنة</button>
+    <p class="hint" style="margin-top:8px;">⚠️ لو نسيتِها، لا يمكن استرجاع البيانات.</p>
+  </div>
+
+  <!-- الشاشة الرئيسية -->
+  <div id="mainScreen" class="hidden">
+
+    <!-- مولّد -->
+    <div class="card">
+      <h2>🎲 توليد كلمة مرور</h2>
+      <input type="text" id="usernameInput" placeholder="اسم المستخدم / الحساب..." autocomplete="off" />
+
+      <div class="slider-row">
+        <span>الطول:</span>
+        <input type="range" id="lengthSlider" min="8" max="64" value="20"
+               oninput="document.getElementById('lengthLabel').textContent=this.value">
+        <span class="slider-value" id="lengthLabel">20</span>
+      </div>
+
+      <div class="checkbox-row">
+        <label><input type="checkbox" id="chkUpper" checked> أحرف كبيرة</label>
+        <label><input type="checkbox" id="chkDigits" checked> أرقام</label>
+        <label><input type="checkbox" id="chkSymbols" checked> رموز</label>
+      </div>
+
+      <button class="btn-success" onclick="generate()">🎲 توليد</button>
+
+      <div id="pwdResult" class="hidden">
+        <div class="pwd-display" id="pwdDisplay"></div>
+        <div class="strength-bar">
+          <div class="strength-fill" id="strengthFill"></div>
+        </div>
+        <div class="strength-text" id="strengthText"></div>
+        <div class="row">
+          <button class="btn-warn" onclick="copyPwd()">📋 نسخ</button>
+          <button class="btn-primary" onclick="saveEntry()">💾 حفظ</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- الخزنة -->
+    <div class="card">
+      <h2>📦 المحفوظات</h2>
+      <div id="vaultList" class="empty">لا توجد إدخالات بعد</div>
+    </div>
+
+    <div class="card">
+      <button class="btn-danger" onclick="lock()">🔒 قفل الخزنة</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const VAULT_KEY = 'pwd_vault_enc';
+const SALT_KEY = 'pwd_vault_salt';
+const ITERATIONS = 310000;
+
+let cryptoKey = null;
+let vault = { entries: [] };
+
+function bufToB64(buf) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)));
+}
+function b64ToBuf(b64) {
+  return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+}
+
+async function deriveKey(masterPassword, salt) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', enc.encode(masterPassword), 'PBKDF2', false, ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: ITERATIONS, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false, ['encrypt', 'decrypt']
+  );
+}
+
+async function encryptData(data, key) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const enc = new TextEncoder();
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv }, key, enc.encode(JSON.stringify(data))
+  );
+  return { iv: bufToB64(iv), data: bufToB64(ciphertext) };
+}
+
+async function decryptData(payload, key) {
+  const iv = b64ToBuf(payload.iv);
+  const ciphertext = b64ToBuf(payload.data);
+  const plaintext = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv }, key, ciphertext
+  );
+  return JSON.parse(new TextDecoder().decode(plaintext));
+}
+
+function getSalt() {
+  let salt = localStorage.getItem(SALT_KEY);
+  if (!salt) {
+    salt = bufToB64(crypto.getRandomValues(new Uint8Array(16)));
+    localStorage.setItem(SALT_KEY, salt);
+  }
+  return b64ToBuf(salt);
+}
+
+async function saveVault() {
+  const encrypted = await encryptData(vault, cryptoKey);
+  localStorage.setItem(VAULT_KEY, JSON.stringify(encrypted));
+}
+
+const LOWER = 'abcdefghijklmnopqrstuvwxyz';
+const UPPER = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const DIGITS = '0123456789';
+const SYMBOLS = '!@#$%^&*()-_=+[]{};:,.<>?/';
+
+function secureRandom(max) {
+  const arr = new Uint32Array(1);
+  crypto.getRandomValues(arr);
+  return arr[0] % max;
+}
+
+function generatePassword(length, useUpper, useDigits, useSymbols) {
+  let pool = LOWER;
+  const required = [LOWER[secureRandom(LOWER.length)]];
+  if (useUpper) { pool += UPPER; required.push(UPPER[secureRandom(UPPER.length)]); }
+  if (useDigits) { pool += DIGITS; required.push(DIGITS[secureRandom(DIGITS.length)]); }
+  if (useSymbols) { pool += SYMBOLS; required.push(SYMBOLS[secureRandom(SYMBOLS.length)]); }
+
+  const rest = [];
+  for (let i = 0; i < length - required.length; i++) {
+    rest.push(pool[secureRandom(pool.length)]);
+  }
+  const all = required.concat(rest);
+  for (let i = all.length - 1; i > 0; i--) {
+    const j = secureRandom(i + 1);
+    [all[i], all[j]] = [all[j], all[i]];
+  }
+  return all.join('');
+}
+
+function calculateEntropy(pwd) {
+  let pool = 0;
+  if (/[a-z]/.test(pwd)) pool += 26;
+  if (/[A-Z]/.test(pwd)) pool += 26;
+  if (/\d/.test(pwd)) pool += 10;
+  if (/[^a-zA-Z0-9]/.test(pwd)) pool += 30;
+  return pool === 0 ? 0 : pwd.length * Math.log2(pool);
+}
+
+function checkPatterns(pwd) {
+  const warns = [];
+  if (/(.)\1{2,}/.test(pwd)) warns.push('تكرار');
+  if (/(012|123|234|345|456|567|678|789|890)/.test(pwd)) warns.push('تسلسل أرقام');
+  if (/(abc|bcd|cde|def|qwe|asd|zxc)/i.test(pwd)) warns.push('تسلسل شائع');
+  const common = ['password','123456','qwerty','admin','welcome','iloveyou'];
+  if (common.some(c => pwd.toLowerCase().includes(c))) warns.push('كلمة شائعة');
+  return warns;
+}
+
+function evaluateStrength(pwd) {
+  const entropy = calculateEntropy(pwd);
+  const patterns = checkPatterns(pwd);
+  let level, color, percent;
+  if (entropy < 40) { level = 'ضعيفة ❌'; color = '#f38ba8'; percent = 25; }
+  else if (entropy < 60) { level = 'متوسطة ⚠️'; color = '#f9e2af'; percent = 50; }
+  else if (entropy < 80) { level = 'قوية ✅'; color = '#a6e3a1'; percent = 75; }
+  else if (entropy < 100) { level = 'قوية جداً 🔒'; color = '#94e2d5'; percent = 90; }
+  else { level = 'خارقة 💎'; color = '#89b4fa'; percent = 100; }
+  if (patterns.length) level += ' (' + patterns.join(', ') + ')';
+  return { level, color, percent, entropy };
+}
+
+async function login() {
+  const pwd = document.getElementById('masterPwd').value;
+  if (pwd.length < 6) { showToast('كلمة المرور 6 أحرف على الأقل', true); return; }
+
+  const salt = getSalt();
+  cryptoKey = await deriveKey(pwd, salt);
+
+  const stored = localStorage.getItem(VAULT_KEY);
+  if (stored) {
+    try {
+      vault = await decryptData(JSON.parse(stored), cryptoKey);
+    } catch (e) {
+      showToast('كلمة المرور خاطئة!', true);
+      cryptoKey = null;
+      return;
+    }
+  } else {
+    vault = { entries: [] };
+    await saveVault();
+  }
+
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('mainScreen').classList.remove('hidden');
+  document.getElementById('masterPwd').value = '';
+  renderVault();
+}
+
+function lock() {
+  cryptoKey = null;
+  vault = { entries: [] };
+  document.getElementById('masterPwd').value = '';
+  document.getElementById('mainScreen').classList.add('hidden');
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('pwdResult').classList.add('hidden');
+  document.getElementById('usernameInput').value = '';
+}
+
+function generate() {
+  const length = parseInt(document.getElementById('lengthSlider').value);
+  const upper = document.getElementById('chkUpper').checked;
+  const digits = document.getElementById('chkDigits').checked;
+  const symbols = document.getElementById('chkSymbols').checked;
+
+  const pwd = generatePassword(length, upper, digits, symbols);
+  document.getElementById('pwdDisplay').textContent = pwd;
+  document.getElementById('pwdResult').classList.remove('hidden');
+
+  const { level, color, percent } = evaluateStrength(pwd);
+  document.getElementById('strengthFill').style.width = percent + '%';
+  document.getElementById('strengthFill').style.background = color;
+  document.getElementById('strengthText').textContent = level;
+  document.getElementById('strengthText').style.color = color;
+  document.getElementById('pwdResult').dataset.pwd = pwd;
+}
+
+async function copyPwd() {
+  const pwd = document.getElementById('pwdResult').dataset.pwd;
+  try {
+    await navigator.clipboard.writeText(pwd);
+    showToast('تم النسخ 📋');
+  } catch {
+    showToast('فشل النسخ', true);
+  }
+}
+
+async function saveEntry() {
+  const user = document.getElementById('usernameInput').value.trim();
+  const pwd = document.getElementById('pwdResult').dataset.pwd;
+  if (!user) { showToast('أدخل اسم المستخدم', true); return; }
+  if (!pwd) { showToast('ولّد كلمة مرور أولاً', true); return; }
+
+  const { level } = evaluateStrength(pwd);
+  vault.entries.push({
+    username: user,
+    password: pwd,
+    strength: level,
+    created_at: new Date().toISOString()
+  });
+  await saveVault();
+  renderVault();
+  showToast('تم الحفظ مشفّراً 🔒');
+  document.getElementById('usernameInput').value = '';
+}
+
+async function deleteEntry(index) {
+  if (!confirm('حذف هذا الإدخال؟')) return;
+  vault.entries.splice(index, 1);
+  await saveVault();
+  renderVault();
+}
+
+async function copyEntry(index) {
+  try {
+    await navigator.clipboard.writeText(vault.entries[index].password);
+    showToast('تم نسخ كلمة المرور 📋');
+  } catch {
+    showToast('فشل النسخ', true);
+  }
+}
+
+function renderVault() {
+  const list = document.getElementById('vaultList');
+  if (!vault.entries.length) {
+    list.innerHTML = '<div class="empty">لا توجد إدخالات بعد</div>';
+    return;
+  }
+  list.innerHTML = vault.entries.map((e, i) => `
+    <div class="vault-item">
+      <div class="vault-info">
+        <div class="vault-user">👤 ${escapeHtml(e.username)}</div>
+        <div class="vault-pwd">${'•'.repeat(Math.min(e.password.length, 20))}</div>
+        <div class="hint">${escapeHtml(e.strength)}</div>
+      </div>
+      <div class="vault-actions">
+        <button class="btn-warn" onclick="copyEntry(${i})">📋</button>
+        <button class="btn-danger" onclick="deleteEntry(${i})">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function showToast(msg, isError = false) {
+  const t = document.createElement('div');
+  t.className = 'toast' + (isError ? ' error' : '');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2200);
+}
+</script>
+</body>
+</html>
